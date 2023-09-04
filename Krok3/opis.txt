@@ -1,0 +1,17 @@
+W tym kroku wykonuję kilka mnijeszych kroków jednocześnie,
+aby uniknąć kilkakrotnego otwierania i zamykania plików.
+Dla każdego pliku pi otrzymanego w Kroku2 wykonam:
+1. Oddzielenie Puzzla od tła
+Podczas skanowania puzzli skorzystałem z czarnej kartki papieru, aby ułatwić
+proces odczytywania konturów puzzli. Choć kolor ten na otrzymanych skanach nie jest
+idealnie czarny, wartości RGB pikseli odczytywanych z tego koloru zwykle nie przekraczają
+70, a prawie nigdy nie przekraczają 80 (dla każdej z wartości R, G i B). Wyjątkami są
+sytuacje, gdy na kartce znajduje się szary strzępek puzzla lub inne drobne zanieczyszczenia.
+Podczas tego kroku modyfikuję wartości pikseli w następujący sposób:
+- Jeśli, którakolwiek z wartości RGB jest większa niż 80, koloruję ten piksel na czarno
+- W przeciwnym przypadku koloruję ten piksel na biało
+Dzięki temu otrzymam czarny kształt puzzla na białym tle, z tym że białe tło może być 
+zanieczyszczone niewielkimi czarnymi plamami strzępków, o których wspominałem wcześniej.
+Również w sytuacji kiedy na odwrocie puzzla znajduje się czarna plamka, program przeskoloruje
+ją na biało - otrzymamy w wyniku tego kroku puzzla z białą plamą gdzieś pośrodku.
+2. Odczytanie Konturów Puzzla 

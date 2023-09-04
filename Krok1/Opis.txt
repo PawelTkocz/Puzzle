@@ -1,0 +1,7 @@
+Na samym początku zeskanowałem wszystkie 999 puzzli, w partiach po 35 puzzli.
+W tym celu skorzystałem z czarnej kartki papieru i specjalnie przygotowanej
+zielonej ramki, która oddzielała puzzle.
+Po zeskanowaniu każdej partii numerowałem puzzle ołówkiem, od lewej do prawej,
+z góry na dół. W ten sposób każdy puzzel został oznaczony unikalną liczbą z 
+zakresu 1-999.
+W ten sposób otrzymałem 29 skanów postaci tego przedstawionego w pliku Skan1.jpg
