@@ -2,50 +2,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pomoc.h"
+#include "linked_list.h"
 
 //mozna potem dodac watki
 
-struct Node{
-    int y;
-    int x;
-    struct Node *next;
+struct BitmapInfo{
+    int width;
+    int height;
+    int **bitmap;
 };
 
-void insert_node(struct Node **head, int y, int x){
-    struct Node *new_node = (struct Node *)malloc(sizeof(struct Node));
-    new_node->y = y;
-    new_node->x = x;
-    new_node->next = *head;
-    *head = new_node;
-}
+void read_bitmap(struct BitmapInfo *bitmapInfo, FILE* finptr, struct Node **point_list){
+    int width = bitmapInfo->width;
+    int height = bitmapInfo->height;
+    int **bitmap = bitmapInfo->bitmap;
 
-void delete_start(struct Node **head){
-    if(*head == NULL)
-        return;
-    struct Node *temp = *head;
-    *head = (*head)->next;
-    free(temp);
-}
-
-void fill_infile_name(char *fname, int i){
-    strcpy(fname, "Res/p");
-    char snum[5];
-    itoa(i, snum, 10);
-    strcat(fname, snum);
-}
-
-void fill_outfile_name(char *fname, int i){
-    getcwd(fname, PATH_MAX);
-    char a = '\\';
-    strncat(fname, &a, 1);
-    strcat(fname, "Res2\\p");
-    char snum[5];
-    itoa(i, snum, 10);
-    strcat(fname, snum);
-    strcat(fname, "_ok.ppm");
-}
-
-void read_bitmap(int width, int height, int bitmap[height][width], FILE* finptr, struct Node **point_list){
     for(int y=0; y<height; y++){
         for(int x=0; x<width; x++){
             int r, g, b;
@@ -60,7 +31,10 @@ void read_bitmap(int width, int height, int bitmap[height][width], FILE* finptr,
     }
 }
 
-bool is_contour(int width, int height, int bitmap[height][width], int x, int y){
+bool is_contour(struct BitmapInfo *bitmapInfo, int x, int y){
+    int width = bitmapInfo->width;
+    int height = bitmapInfo->height;
+    int **bitmap = bitmapInfo->bitmap;
     if(y==0 || y==height-1 || x==0 || x==width-1)
         return false;
     if(bitmap[y][x+1]==0 || bitmap[y][x-1]==0 || bitmap[y+1][x]==0 || bitmap[y-1][x]==0)
@@ -68,11 +42,14 @@ bool is_contour(int width, int height, int bitmap[height][width], int x, int y){
     return false;
 }
 
-bool on_bitmap(int width, int height, int x, int y){
+bool on_bitmap(struct BitmapInfo *bitmapInfo, int x, int y){
+    int width = bitmapInfo->width;
+    int height = bitmapInfo->height;
     return (x>=0 && x<width && y>=0 && y<height);
 }
 
-int find_contour_neighbours(int width, int height, int bitmap[height][width], int x_start, int y_start){
+int find_contour_neighbours(struct BitmapInfo *bitmapInfo, int x_start, int y_start){
+    int **bitmap = bitmapInfo->bitmap;
     int group = bitmap[y_start][x_start];
     int cnt = 1;
 
@@ -86,7 +63,7 @@ int find_contour_neighbours(int width, int height, int bitmap[height][width], in
             for(int j=-1; j<2; j++){
                 if(i==0 && j==0)
                     continue;
-                if(on_bitmap(width, height, x+j, y+i) && bitmap[y+i][x+j]==1 && is_contour(width, height, bitmap, x+j, y+i)){
+                if(on_bitmap(bitmapInfo, x+j, y+i) && bitmap[y+i][x+j]==1 && is_contour(bitmapInfo, x+j, y+i)){
                     bitmap[y+i][x+j] = group;
                     cnt++;
                     insert_node(&queue, y+i, x+j);
@@ -97,37 +74,157 @@ int find_contour_neighbours(int width, int height, int bitmap[height][width], in
     return cnt;
 }
 
-int get_puzzle_contour(int width, int height, int bitmap[height][width], struct Node *point_list){
+int get_puzzle_contour(struct BitmapInfo *bitmapInfo, struct Node *point_list){
+    int **bitmap = bitmapInfo->bitmap;
     int next_group = 2;
     int max_group = 2;
     int max_group_size = 0;
     while(point_list != NULL){
         int y = point_list->y;
         int x = point_list->x;
-        if(bitmap[y][x]>1 || (is_contour(width, height, bitmap, x, y) == false))
-            point_list = point_list->next;
-        else{
+        if(bitmap[y][x]==1 && is_contour(bitmapInfo, x, y)){
             bitmap[y][x] = next_group;
-            int cnt = find_contour_neighbours(width, height, bitmap, x, y);
+            int cnt = find_contour_neighbours(bitmapInfo, x, y);
             if(cnt > max_group_size){
                 max_group_size = cnt;
                 max_group = next_group;
             }
             next_group++;
         }
+        point_list = point_list->next;
     }
     return max_group;
 }
 
-void bitmap_to_file(int width, int height, int bitmap[height][width], FILE* foutptr, int group){
+int leave_only_contour(struct BitmapInfo *bitmapInfo, int group, struct Node *point_list){
+    int **bitmap = bitmapInfo->bitmap;
+    struct Node *prev = NULL;
+    int len = 0;
+    while(point_list != NULL){
+        int y = point_list->y;
+        int x = point_list->x;
+        if(bitmap[y][x] == group){
+            bitmap[y][x] = 1;
+            prev = point_list;
+            point_list = point_list->next;
+            len++;
+        }
+        else{
+            bitmap[y][x] = 0;
+            if(prev == NULL){
+                delete_start(&point_list);
+            }
+            else{
+                delete_next(prev);
+                point_list = prev->next;
+            }
+        }
+    }
+    return len;
+}
+
+void bitmap_to_file(struct BitmapInfo *bitmapInfo, FILE* foutptr){
+    int width = bitmapInfo->width;
+    int height = bitmapInfo->height;
+    int **bitmap = bitmapInfo->bitmap;
     for(int y=0; y<height; y++){
         for(int x=0; x<width; x++){
-            if(bitmap[y][x] == group)
+            if(bitmap[y][x] == 1)
                 fprintf(foutptr, "%d %d %d\n", 0, 0, 0);
             else
                 fprintf(foutptr, "%d %d %d\n", 255, 255, 255);
         }
     }
+}
+
+void mark_as_available(struct BitmapInfo *bitmapInfo, int x, int y, int group){
+    int **bitmap = bitmapInfo->bitmap;
+    for(int i=-1; i<2; i++){
+        for(int j=-1; j<2; j++){
+            if(i==0 && j==0)
+                continue;
+            if(on_bitmap(bitmapInfo, x+j, y+i) && bitmap[y+i][x+j]==group){
+                bitmap[y+i][x+j] = 1;
+            }
+        }
+    }
+}
+
+//bool lookup_neighbours(, int x, int y, )
+
+void reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node *point_list, int contour_len){
+
+    int **bitmap = bitmapInfo->bitmap;
+
+    int start_x = point_list->x;
+    int start_y = point_list->y;
+    struct Node *pts_queue;
+    insert_node(&pts_queue, start_y, start_x);
+    bool forward = true;
+    int prev_x = 0;
+    int prev_y = 0;
+    int cur_len = 2;
+
+    //kiedy koniec kiedy od nowa
+    while(true){
+        int cur_x = pts_queue->x;
+        int cur_y = pts_queue->y;
+        if(forward){
+            bool found = false;
+            //wszystkie wolne piksele s¹siady oznaczam na bitmapie przez cur_len
+            //wrzucam pierwszego wolnego piksela s¹siada do pts_queue
+            for(int i=-1; i<2; i++){
+                for(int j=-1; j<2; j++){
+                    if(i==0 && j==0)
+                        continue;
+                    if(on_bitmap(bitmapInfo, cur_x+j, cur_y+i) && bitmap[cur_y+i][cur_x+j]==1){
+                        if(!found){
+                            found = true;
+                            insert_node(&pts_queue, cur_y+i, cur_x+j);
+                        }
+                        bitmap[cur_y+i][cur_x+j] = cur_len;
+                    }
+                }
+            }
+            //jesli nie znalazlem zadnego wolnego piksela
+            if(!found){
+                forward = false;
+                delete_start(&pts_queue);
+                prev_x = cur_x;
+                prev_y = cur_y;
+                cur_len--;
+            }
+            else
+                cur_len++;
+        }
+        else{
+            bool found = false;
+            //wszystkie piksele s¹siady s¹ ju¿ oznaczone na bitmapie przez cur_len
+            //poprzez ustawienie wartoœci i oraz j w ten sposob, przeszukuje wszystkie
+            //nieprzeanalizowane jeszcze piksele s¹siady. Jeœli taki siê znajdzie, dodaje
+            //go do pts_queue i zwiekszam cur_len.
+            for(int i=prev_y-cur_y; i<2; i++){
+                for(int j=prev_x-cur_x+1; j<2; j++){
+                    if(i==0 && j==0)
+                        continue;
+                    if(on_bitmap(bitmapInfo, cur_x+j, cur_y+i) && bitmap[cur_y+i][cur_x+j]==cur_len){
+                        if(!found){
+                            found = true;
+                            insert_node(&pts_queue, cur_y+i, cur_x+j);
+                            cur_len++;
+                        }
+                    }
+                }
+            }
+            if(!found){
+                delete_start(&pts_queue);
+                prev_x = cur_x;
+                prev_y = cur_y;
+                mark_as_available(bitmapInfo, cur_x, cur_y, cur_len);
+            }
+        }
+    }
+
 }
 
 int main(){
@@ -153,11 +250,19 @@ int main(){
 
         int bitmap[height][width];
         struct Node *point_list = NULL;
-        read_bitmap(width, height, bitmap, finptr, &point_list);
+        struct BitmapInfo bitmapInfo;
+        bitmapInfo.width = width;
+        bitmapInfo.height = height;
+        bitmapInfo.bitmap = (int**)bitmap;
+        read_bitmap(&bitmapInfo, finptr, &point_list);
 
-        int contour_num = get_puzzle_contour(width, height, bitmap, point_list);
-        bitmap_to_file(width, height, bitmap, foutptr, contour_num);
+        int contour_num = get_puzzle_contour(&bitmapInfo, point_list);
+        int contour_len = leave_only_contour(&bitmapInfo, contour_num, point_list);
+        reduce_contour_pts(&bitmapInfo, point_list, contour_len);
 
+
+
+        bitmap_to_file(&bitmapInfo, foutptr);
         fclose(finptr);
         fclose(foutptr);
     }

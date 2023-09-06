@@ -9,6 +9,24 @@
 #define WHITE_MIN 230
 #define GREEN_RED_DIFF 20
 
+void fill_infile_name(char *fname, int i){
+    strcpy(fname, "Res/p");
+    char snum[5];
+    itoa(i, snum, 10);
+    strcat(fname, snum);
+}
+
+void fill_outfile_name(char *fname, int i){
+    getcwd(fname, PATH_MAX);
+    char a = '\\';
+    strncat(fname, &a, 1);
+    strcat(fname, "Res2\\p");
+    char snum[5];
+    itoa(i, snum, 10);
+    strcat(fname, snum);
+    strcat(fname, "_ok.ppm");
+}
+
 void ppm_header(FILE* ptr, int width, int height){
     fprintf(ptr, "%s\n%d %d\n255\n", "P3" ,width, height);
 }
