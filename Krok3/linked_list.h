@@ -23,6 +23,17 @@ void delete_start(struct Node **head){
     free(temp);
 }
 
+void free_list(struct Node *head){
+    if(head == NULL)
+        return;
+    while(head->next != NULL){
+        struct Node *temp = (head->next)->next;
+        free(head->next);
+        head->next = temp;
+    }
+    free(head);
+}
+
 void delete_next(struct Node *n){
     if(n == NULL)
         return;

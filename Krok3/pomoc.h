@@ -5,12 +5,12 @@
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
-#define BLACK_MAX 90
-#define WHITE_MIN 230
+#define BLACK_MAX 80
+#define WHITE_MIN 125
 #define GREEN_RED_DIFF 20
 
 void fill_infile_name(char *fname, int i){
-    strcpy(fname, "Res/p");
+    strcpy(fname, "Nowe_puzzle/p");
     char snum[5];
     itoa(i, snum, 10);
     strcat(fname, snum);
@@ -20,7 +20,7 @@ void fill_outfile_name(char *fname, int i){
     getcwd(fname, PATH_MAX);
     char a = '\\';
     strncat(fname, &a, 1);
-    strcat(fname, "Res2\\p");
+    strcat(fname, "Nowe_puzzle_res\\p");
     char snum[5];
     itoa(i, snum, 10);
     strcat(fname, snum);
@@ -34,8 +34,8 @@ void ppm_header(FILE* ptr, int width, int height){
 bool puzzle_pixel(int r, int g, int b){
     if(r<BLACK_MAX && g<BLACK_MAX && b<BLACK_MAX)
         return false;
-    if(abs(g-r)>GREEN_RED_DIFF)
-        return false;
+    //if(abs(g-r)>GREEN_RED_DIFF)
+    //    return false;
     if(r>WHITE_MIN && g>WHITE_MIN && b>WHITE_MIN)
         return false;
     return true;
