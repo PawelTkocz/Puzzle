@@ -301,6 +301,84 @@ int reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node **point_list, 
     return cur_cnt;
 }
 
+double distance_to_line(int x, int y, double a, double b, double c){
+    return fabs(a*x + b*y + c)/sqrt(a*a+b*b);
+}
+
+void find_longest_lines(int *points_x, int *points_y,int contour_len, int *longest_lines){
+    int max_error = 10;
+    int max_dist = 1; //max dystans punktu od prostej
+    for(int i=0; i<contour_len; i++){
+        //znajdz najwieksze takie j ze mozna polaczyc j kolejnych punktow jedna prosta
+        //ze wzgledu na problemy ze skanami pozwalamy by punkty na chwile odeszly od prostej
+        //o ile znowu na nia wroca (max error_len punktow zanim wroci)
+
+        //zalozmy ze ta prosta bedzie sie skladala z countour_len/2 punktow
+        //sprawdz czy sie da - jesli nie to robimy binsearch, czyli sprawdzamy dla contour_len/4
+        //jesli sie da to zwiekszamy liczbe punkotow o polowe rozwazanego przedzialu
+        //prosta latwo wyznaczyc z pierwszego i ostatniego punktu ktore musza sie na niej znajdowac
+        //pytanie czy pierwsze np 5 punktow musi byc na prostej - wpp na rogach najdluzsza prosta bedzie dla punktu chwile przed zakretem
+        int x0 = points_x[i];
+        int y0 = points_y[i];
+        int s = 2;
+        int e = contour_len;
+        while(e-s > 1){
+            int m = (s+e)/2;
+            int xm = points_x[(i+m)%contour_len];
+            int ym = points_y[(i+m)%contour_len];
+            //sprawdzamy czy da sie utworzyc dobra prosta przez nastepne m punktow
+            //prosta w postaci ogolnej ma postac ax+by+c = 0
+            double a=1.0;
+            double b=0.0;
+            double c=-1.0*(double)x0;
+            if(x0!=xm){
+                a = (double)(ym-y0)/(x0-xm);
+                b = 1.0;
+                c = -1.0*(double)(a*x0+y0);
+            }
+            int error_counter = 0;
+            bool succeed = true;
+            for(int j=1; j<m; j++){
+                int xj = points_x[(i+j)%contour_len];
+                int yj = points_y[(i+j)%contour_len];
+                if(distance_to_line(xj, yj, a, b, c) > max_dist){
+                    error_counter++;
+                    if(error_counter >= max_error){
+                        succeed = false;
+                        break;
+                    }
+                }
+                else{
+                    error_counter = 0;
+                }
+            }
+            if(succeed)
+                s = m;
+            else
+                e = m;
+        }
+        longest_lines[i] = s;
+    }
+}
+
+void find_corners(struct BitmapInfo *bitmapInfo, struct Node *point_list, int contour_len, struct Node **corners){
+    int points_x[contour_len];
+    int points_y[contour_len];
+    int i=0;
+    while(point_list != NULL){
+        points_x[i] = point_list->x;
+        points_y[i] = point_list->y;
+        point_list = point_list->next;
+        i++;
+    }
+    //znajdz najdluzsze proste odcinki a potem rogi
+    int longest_lines[contour_len];
+    find_longest_lines(points_x, points_y, contour_len, longest_lines);
+    for(int i=0; i<contour_len; i++){
+        int v=longest_lines[i];
+        printf("%d. %d %d to %d %d wynik %d\n", i, points_x[i], points_y[i], points_x[(i+v)%contour_len], points_y[(i+v)%contour_len], v);
+    }
+}
 
 int main(){
     int puzzle_pieces;
@@ -331,11 +409,14 @@ int main(){
         read_bitmap(&bitmapInfo, finptr, &point_list);
         int contour_num = get_puzzle_contour(&bitmapInfo, point_list);
         int contour_len = leave_only_contour(&bitmapInfo, contour_num, &point_list);
-        reduce_contour_pts(&bitmapInfo, &point_list, contour_len);
+        contour_len = reduce_contour_pts(&bitmapInfo, &point_list, contour_len);
+        struct Node *corners = NULL;
+        find_corners(&bitmapInfo, point_list, contour_len, &corners);
 
         printf("%d\n", i);
         bitmap_to_file(&bitmapInfo, foutptr);
         fclose(finptr);
         fclose(foutptr);
+        free_list(point_list);
     }
 }
