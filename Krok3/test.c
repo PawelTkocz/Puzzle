@@ -14,7 +14,6 @@ int main(){
     int puzzle_pieces;
     printf("Podaj liczbe puzzli: ");
     scanf("%d", &puzzle_pieces);
-
     //kazdy puzzel
 
     int contour_length[puzzle_pieces];
@@ -72,6 +71,7 @@ int main(){
         points_x[i] = pts_x;
         points_y[i] = pts_y;
 
+        visualize_sides(&bitmapInfo, puzzle_sides, pts_x, pts_y, contour_len, crnrs);
         visualize_corners(&bitmapInfo);
         bitmap_to_file(&bitmapInfo, foutptr);
         fclose(finptr);
@@ -80,20 +80,32 @@ int main(){
         printf("%d\n", i);
     }
 
-
+    int wyp = 0;
+    int wkl = 0;
+    int ramek = 0;
+    int rogow = 0;
     for(int i=0; i<puzzle_pieces; i++){
         printf("%d\n", i);
         int n = contour_length[i];
+        int cnt = 0;
         for(int j=0; j<4; j++){
             if(corners[i][j] < 0)
                 printf("%d ", corners[i][j]);
-            if(sides[i][j].type == 0)
-                printf("jej\n");
+            if(sides[i][j].type == 0){
+                ramek++;
+                cnt++;
+                if(cnt == 2)
+                    rogow++;
+            }
+            else if(sides[i][j].type == -1)
+                wkl++;
+            else
+                wyp++;
         }
         for(int j=0; j<n; j++){
             if(points_x[i][j] < 0 || points_y[i][j] < 0)
                 printf("(%d %d) ", points_x[i][j], points_y[i][j]);
         }
     }
-
+    printf("%d %d %d %d\n", wyp, wkl, ramek, rogow);
 }
