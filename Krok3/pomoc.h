@@ -91,6 +91,25 @@ bool puzzle_pixel(int r, int g, int b){
     return true;
 }
 
+double find_angle(int x0, int y0, int x1, int y1, int x2, int y2){
+    double a1 = x1-x0;
+    double b1 = y1-y0;
+    double a2 = x2-x0;
+    double b2 = y2-y0;
+    double angle = acos((a1*a2+b1*b2)/(point_dist(x0, y0, x1, y1)*point_dist(x0, y0, x2, y2))) * 180 / 3.141592;
+    return angle;
+}
+
+double ostry_angle(double angle){
+    if(angle > 90.0)
+        angle = 180.0 - angle;
+    return angle;
+}
+
+double distance_to_line(int x, int y, double a, double b, double c){
+    return fabs(a*x + b*y + c)/sqrt(a*a+b*b);
+}
+
 int get_directory_files(char *dir_name){
     char dir_path[PATH_MAX];
     getcwd(dir_path, sizeof(dir_path));
