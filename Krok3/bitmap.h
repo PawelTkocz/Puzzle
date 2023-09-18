@@ -33,13 +33,15 @@ void bitmap_to_file(struct BitmapInfo *bitmapInfo, FILE* foutptr){
             int v = get_bitmap(bitmapInfo, x, y);
             if(v == 1)
                 fprintf(foutptr, "%d %d %d\n", 0, 0, 0);
+            else if(v == 2)
+                fprintf(foutptr, "%d %d %d\n", 255, 255, 0);
             else if(v == 3)
                 fprintf(foutptr, "%d %d %d\n", 255, 0, 255);
-            else if(v == 4)
+            else if(v == 4 || v==7)
                 fprintf(foutptr, "%d %d %d\n", 255, 0, 0);
-            else if(v == 5)
+            else if(v == 5 || v==8)
                 fprintf(foutptr, "%d %d %d\n", 0, 255, 0);
-            else if(v == 6)
+            else if(v == 6 || v==9)
                 fprintf(foutptr, "%d %d %d\n", 0, 0, 255);
             else
                 fprintf(foutptr, "%d %d %d\n", 255, 255, 255);

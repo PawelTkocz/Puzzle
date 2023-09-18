@@ -9,12 +9,26 @@ struct CornerCandidate{
     int end_left_y;
     int end_right_x;
     int end_right_y;
+    double angle;
+};
+
+struct Position{
+    double x;
+    double y;
 };
 
 struct PuzzleSide{
     int type;
     //-1 wklesly 0 bok 1 wypukly
     double width;
+    int points_num;
+    struct Position* positions;
+    double angle_left;
+    double angle_right;
+};
+
+struct Puzzle{
+    struct PuzzleSide sides[4];
 };
 
 bool are_corners(struct CornerCandidate *c1, struct CornerCandidate *c2, struct CornerCandidate *c3, struct CornerCandidate *c4, int contour_len){
@@ -191,18 +205,6 @@ bool corners_found(struct CornerCandidate *candidates, int n, int *final_corners
         for(int b=a+1; b<n-2; b++)
             for(int c=b+1; c<n-1; c++)
                 for(int d=c+1; d<n; d++){
-                    /*
-                    int xs[4] = {candidates[a].x, candidates[b].x, points_x[candidates[c]], points_x[candidates[d]]};
-                    int ys[4] = {points_y[candidates[a]], points_y[candidates[b]], points_y[candidates[c]], points_y[candidates[d]]};
-                    if(is_rectangle(xs, ys)){
-                        //przyda sie dodatkowo sprawdzenie czy pomiedzy dwoma rogami sa maksymalnie dwaj kandydaci na rogi
-                        candidates[0] = candidates[a];
-                        candidates[1] = candidates[b];
-                        candidates[2] = candidates[c];
-                        candidates[3] = candidates[d];
-                        return true;
-                    }
-                    */
                     if(are_corners(&candidates[a], &candidates[b], &candidates[c], &candidates[d], contour_len)){
                         final_corners[0] = a;
                         final_corners[1] = b;
@@ -212,27 +214,26 @@ bool corners_found(struct CornerCandidate *candidates, int n, int *final_corners
                     }
                 }
     return false;
-    //kiedy dodajemy kandydata na rog trzeba zapamietac w ktora strone skierowane sa ramiona katu
-    //i kiedy sprawdzamy czy kandydaci tworza prostokat trzeba dodatkowo sprawdzic czy te wektory
-    //wskazuja we wlasciwa storone
 }
 
-double pivot_left(int pivot_x, int pivot_y, int x, int y, double angle){
+void pivot_left(int pivot_x, int pivot_y, int x, int y, double angle, double *nx, double *ny){
     double angle_rad = angle * 3.141592654 / 180;
-    //double x_res = (x-pivot_x)*cos(angle_rad) - (y-pivot_y)*sin(angle_rad) + pivot_x;
-    double y_res = (x-pivot_x)*sin(angle_rad) + (y-pivot_y)*cos(angle_rad) + pivot_y;
+    *nx = (x-pivot_x)*cos(angle_rad) - (y-pivot_y)*sin(angle_rad) + pivot_x;
+    *ny = (x-pivot_x)*sin(angle_rad) + (y-pivot_y)*cos(angle_rad) + pivot_y;
     //printf("%lf %lf\n", x_res, y_res);
-    return y_res;
 }
 
-void describe_sides(struct PuzzleSide *sides, struct CornerCandidate **corners, int contour_len, int *points_x, int *points_y){
+void describe_sides(struct Puzzle *puzzle, struct CornerCandidate **corners, int contour_len, int *points_x, int *points_y){
     for(int i=0; i<4; i++){
         struct CornerCandidate *c1 = corners[i];
         struct CornerCandidate *c2 = corners[(i+1)%4];
         struct CornerCandidate *c3 = corners[(i+2)%4];
         //printf("%d. (%d %d) (%d %d)\n", i, points_x[c1->ind], points_y[c1->ind], points_x[c2->ind], points_y[c2->ind]);
         double side_len = point_dist(c1->x, c1->y, c2->x, c2->y);
-        sides[i].width = side_len;
+        puzzle->sides[i].width = side_len;
+        puzzle->sides[i].angle_left = 1;
+        puzzle->sides[i].angle_right = 2;
+
         struct CornerCandidate *lower = c1;
         struct CornerCandidate *upper = c2;
         if(c2->y < c1->y){
@@ -252,11 +253,18 @@ void describe_sides(struct PuzzleSide *sides, struct CornerCandidate **corners, 
         int lower_cnt = 0;
         int upper_cnt = 0;
         //printf("Upper %d Lower %d\n", upper_line, lower_line);
-        int n = (c2->ind - c1->ind - 1 + contour_len)%contour_len;
-        for(int i=1; i<n+1; i++){
+        int n = (c2->ind - c1->ind + 1 + contour_len)%contour_len;
+        puzzle->sides[i].points_num = n;
+
+        struct Position* positions;
+        positions = (struct Position*)malloc(n * sizeof(struct Position));
+        puzzle->sides[i].positions = positions;
+
+        for(int i=0; i<n; i++){
             int x = points_x[(c1->ind + i)%contour_len];
             int y = points_y[(c1->ind + i)%contour_len];
-            double ny = pivot_left(lower->x, lower->y, x, y, angle);
+            double nx, ny;
+            pivot_left(lower->x, lower->y, x, y, angle, &nx, &ny);
             if(ny > upper_line)
                 upper_cnt++;
             else if(ny < lower_line)
@@ -264,19 +272,61 @@ void describe_sides(struct PuzzleSide *sides, struct CornerCandidate **corners, 
         }
         //printf("Upper cnt %d Lower cnt %d\n", upper_cnt, lower_cnt);
         int puzzle_up = 1;
-        if(pivot_left(lower->x, lower->y, c3->x, c3->y, angle) < lower->y)
+        double nx, ny;
+        pivot_left(lower->x, lower->y, c3->x, c3->y, angle, &nx, &ny);
+        if(ny < lower->y)
             puzzle_up = -1;
         int minimum = side_len/5;
+        int type = 0;
         if(lower_cnt > minimum)
-            sides[i].type = puzzle_up;
+            type = puzzle_up;
         else if(upper_cnt > minimum)
-            sides[i].type = -1*puzzle_up;
-        else
-            sides[i].type = 0;
+            type = -1*puzzle_up;
+
+        puzzle->sides[i].type = type;
+
+
+        if((puzzle_up == 1 && type==1) || (puzzle_up == -1 && type==-1)){
+            for(int i=0; i<n; i++){
+                int x = points_x[(c1->ind + i)%contour_len];
+                int y = points_y[(c1->ind + i)%contour_len];
+                double nx, ny;
+                pivot_left(lower->x, lower->y, x, y, angle+180, &nx, &ny);
+                if(lower->ind == c1->ind){
+                    positions[i].x = nx - lower->x;
+                    positions[i].y = ny - lower->y;
+                }
+                else{
+                    positions[n-1-i].x = nx - lower->x;
+                    positions[n-1-i].y = ny - lower->y;
+                }
+            }
+        }
+        else{
+            int x = points_x[(upper->ind)];
+            int y = points_y[(upper->ind)];
+            double delta_x, delta_y;
+            pivot_left(lower->x, lower->y, x, y, angle, &delta_x, &delta_y);
+            for(int i=0; i<n; i++){
+                int x = points_x[(c1->ind + i)%contour_len];
+                int y = points_y[(c1->ind + i)%contour_len];
+                double nx, ny;
+                pivot_left(lower->x, lower->y, x, y, angle, &nx, &ny);
+                if(lower->ind == c1->ind){
+                    positions[n-1-i].x = nx - delta_x;
+                    positions[n-1-i].y = ny - delta_y;
+                }
+                else{
+                    positions[i].x = nx - delta_x;
+                    positions[i].y = ny - delta_y;
+                }
+            }
+        }
     }
 }
 
-void find_corners(struct BitmapInfo *bitmapInfo, struct Node *point_list, int contour_len, int *crnrs, struct PuzzleSide *sides){
+void find_corners(struct BitmapInfo *bitmapInfo, struct Node *point_list, int contour_len, struct Puzzle *puzzle){
+    //int *crnrs, struct PuzzleSide *sides
     int points_x[contour_len];
     int points_y[contour_len];
     int i=0;
@@ -293,22 +343,6 @@ void find_corners(struct BitmapInfo *bitmapInfo, struct Node *point_list, int co
     int longest_l_end[contour_len];
     int *temp[] = {(int*)longest_l_len, longest_l_end, (int*)longest_r_len, longest_r_end};
     find_longest_lines(points_x, points_y, contour_len, temp);
-    /*
-    for(int i=0; i<contour_len; i++){
-        double l1 = longest_l_len[i];
-        double l2 = longest_r_len[i];
-        int d1 = longest_l_end[i];
-        int d2 = longest_r_end[i];
-        int x0 = points_x[i];
-        int y0 = points_y[i];
-        int x1 = points_x[(contour_len+i-d2)%contour_len];
-        int y1 = points_y[(contour_len+i-d2)%contour_len];
-        int x2 = points_x[(i+d1)%contour_len];
-        int y2 = points_y[(i+d1)%contour_len];
-        double v = l1+l2;
-        printf("%d (%d %d) -> %lf (%d %d) + %lf (%d %d) = %lf\n", i, x0, y0, l2, x1, y1, l1, x2, y2, v);
-    }
-    */
 
     bool available[contour_len];
     for(int i=0; i<contour_len; i++)
@@ -319,16 +353,10 @@ void find_corners(struct BitmapInfo *bitmapInfo, struct Node *point_list, int co
     int *tab[] = {(int*)sum, longest_l_end, longest_r_end};
 
     int cnt = 0;
-    //int candidates[15];
     struct CornerCandidate candidates[15];
     int final_corners[4];
     while(cnt < 15){
         //printf("re %d\n", available[221]);
-        //znajdz najdluzszy odcinek
-        //oznacz dwa jego konce w available przez 2
-        //punkty pomiedzy nimi oznacz w available przez 0
-        //kiedy oznaczasz cos przez 2 sprawdz czy nie ma w promieniu r innej 2
-        //jesli jest to wyciagnij sredni punkt z tych dwojek i dodaj go do corners_candidates
         int ind = find_max_line(tab, points_x, points_y, contour_len, available);
 
         int x0 = points_x[ind];
@@ -356,23 +384,30 @@ void find_corners(struct BitmapInfo *bitmapInfo, struct Node *point_list, int co
             candidates[cnt].end_left_y = y1;
             candidates[cnt].end_right_x = x2;
             candidates[cnt].end_right_y = y2;
+            candidates[cnt].angle = angle;
 
             cnt++;
             if(corners_found(candidates, cnt, final_corners, contour_len))
                 break;
         }
     }
+    int crnrs[4];
     for(int i=0; i<4; i++){
         set_bitmap(bitmapInfo, candidates[final_corners[i]].x, candidates[final_corners[i]].y, 2);
         //printf("%d %d\n", points_x[candidates[i]], points_y[candidates[i]]);
         crnrs[i] = candidates[final_corners[i]].ind;
     }
+    /*
+    tu mo¿na zaznaczyc na bitmapie tak jak w przypadku rogow kazdy bok juz odpowiednim
+    kolorem w zaleznosci od jego typu
+    */
+
     select_sort_two(4, crnrs, final_corners);
     struct CornerCandidate* corners[4];
     for(int i=0; i<4; i++){
         corners[i] = &candidates[final_corners[i]];
     }
-    describe_sides(sides, corners, contour_len, points_x, points_y);
+    describe_sides(puzzle, corners, contour_len, points_x, points_y);
 }
 
 void visualize_corners(struct BitmapInfo *bitmapInfo){
@@ -389,7 +424,20 @@ void visualize_corners(struct BitmapInfo *bitmapInfo){
         }
 }
 
-void visualize_sides(struct BitmapInfo *bitmapInfo, struct PuzzleSide *puzzle_sides, int *points_x, int *points_y, int contour_len, int *corners){
+void visualize_sides(struct BitmapInfo *bitmapInfo){
+    for(int i=0; i<bitmapInfo->height; i++)
+        for(int j=0; j<bitmapInfo->width; j++){
+            int val = get_bitmap(bitmapInfo, j, i);
+            if(val == 4 || val == 5 || val == 6){
+                for(int y = -5; y<6; y++){
+                    for(int x = -5; x<6; x++){
+                        if(on_bitmap(bitmapInfo, j+x, i+y) && get_bitmap(bitmapInfo, j+x, i+y)==0)
+                            set_bitmap(bitmapInfo, j+x, i+y, val+3);
+                    }
+                }
+            }
+        }
+/*
     for(int i=0; i<4; i++){
         int c1 = corners[i];
         int c2 = corners[(i+1)%4];
@@ -406,5 +454,39 @@ void visualize_sides(struct BitmapInfo *bitmapInfo, struct PuzzleSide *puzzle_si
             }
         }
     }
+*/
 }
 
+void visualize_rotated_sides(struct BitmapInfo *bitmapInfo, struct Puzzle puzzle){
+    for(int i=0; i<bitmapInfo->height; i++){
+        for(int j=0; j<bitmapInfo->width; j++){
+            set_bitmap(bitmapInfo, j, i, 0);
+        }
+    }
+
+    int margin_x = 20;
+    int margin_y = 20;
+
+    int cur_height = 0;
+    for(int i=0; i<4; i++){
+        struct PuzzleSide s = puzzle.sides[i];
+        int n = s.points_num;
+        double maks = -100.0;
+        double mini = 100.0;
+        for(int j=0; j<n; j++){
+            double y = s.positions[j].y;
+            if(y > maks)
+                maks = y;
+            if(y < mini)
+                mini = y;
+        }
+        double height = maks - mini;
+        int color = s.type + 5;
+        for(int j=0; j<n; j++){
+            int x = s.positions[j].x;
+            int y = s.positions[j].y;
+            set_bitmap(bitmapInfo, margin_x + x, cur_height + height + margin_y - y, color);
+        }
+        cur_height += (height+margin_y);
+    }
+}
