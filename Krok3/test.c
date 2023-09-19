@@ -8,8 +8,11 @@
 #include "bitmap.h"
 #include "contour.h"
 #include "corners.h"
+#include "puzzle_match"
+#include "solve_boarder.h"
 
-//mozna potem dodac watki
+//jak jest opis puzzla to trzeba opisywac jego boki w ustalonej kolejnosci
+//nie mozna raz w lewo raz w prawo
 
 struct ThreadStruct{
     int puzzle_pieces;
@@ -92,44 +95,66 @@ int main(){
         if(pthread_join(tid[i], NULL) != 0)
             perror("Nie udalo sie zjoinowac watku\n");
 
-    /*
-    for(int i=0; i<puzzle_pieces; i++){
-        do_puzzle(puzzles, i);
-    }
-    */
 
-    /*
-    for(int i=0; i<puzzle_pieces; i++){
-        for(int j=0; j<4; j++){
-            printf("%d %lf %d\n", puzzles[i].sides[j].type, puzzles[i].sides[j].width, puzzles[i].sides[j].points_num);
-            int n = puzzles[i].sides[j].points_num;
-            for(int k=0; k<n; k++){
-                printf("(%lf %lf)\n", puzzles[i].sides[j].positions[k].x, puzzles[i].sides[j].positions[k].y);
-            }
-        }
-    }
-    */
-    /*
-    int wyp = 0;
-    int wkl = 0;
-    int ramek = 0;
+    int obwod = 0;
     int rogow = 0;
+    bool boarder[puzzle_pieces];
+    for(int i=0; i<puzzle_pieces; i++)
+        boarder[i] = false;
+    int corners[4];
+
     for(int i=0; i<puzzle_pieces; i++){
         printf("%d\n", i);
         int cnt = 0;
         for(int j=0; j<4; j++){
             if(puzzles[i].sides[j].type == 0){
-                ramek++;
+                boarder[i] = true;
+                obwod++;
                 cnt++;
-                if(cnt == 2)
+                if(cnt == 2){
+                    corners[rogow] = i;
                     rogow++;
+                }
             }
-            else if(puzzles[i].sides[j].type == -1)
-                wkl++;
-            else
-                wyp++;
         }
     }
-    printf("%d %d %d %d\n", wyp, wkl, ramek, rogow);
+    if(rogow != 4){
+        printf("Nie udalo sie wykryc czterech rogow puzzli\n");
+        return 0;
+    }
+    if(corners[0] < 0)
+        return 0;
+    int cnt = 0;
+    if(boarder[0])
+        cnt++;
+    /*
+    Aby obliczyc rozmiar puzzli nalezy roziwazac uklad rownan:
+    xy = puzzle_pieces
+    2(x+y) = obwod      =>  x = obwod/2 - y
+
+    (obwod/2 - y)y = puzzle_pieces     =>           (-y)^2 + y(obwod/2) - puzzle_pieces = 0
+    delta = obwod^2/4 -4*puzzle_pieces
     */
+    double delta = (double)obwod*obwod/4 - 4*puzzle_pieces;
+    double sqrt_delta = sqrt(delta);
+    double y = (-1*obwod/2 - sqrt_delta)/(-2);
+    double x = obwod/2 - y;
+    if(ceilf(y) != y || ceilf(x) != x){
+        printf("Nie udalo sie wykryc odpowiedniej liczby puzzli tworzacych ramke\n");
+        return 0;
+    }
+    if(x < y){
+        double temp = x;
+        x = y;
+        y = temp;
+    }
+    int puzzle_width = (int)x;
+    int puzzle_height = (int)y;
+
+    int puzzle_solution[puzzle_height][puzzle_width];
+    for(int i=0; i<puzzle_height; i++)
+        for(int j=0; j<puzzle_width; j++)
+            puzzle_solution[i][j] = -1;
+
+    solve_boarder((int*)puzzle_solution, puzzle_width, puzzle_height, boarder, corners, puzzles);
 }
