@@ -133,14 +133,14 @@ int reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node **point_list, 
     //mozna na koniec sprawdzic czy ostatni dodany nie graniczy z drugim - moza usunac pierwszy a moze tez ten drugi
     int prev_x = 0;
     int prev_y = 0;
-    bool forward;
+    bool is_forward;
     bool succeed = false;
     struct Node *pts_queue = NULL;
     int cur_cnt;
     while(!succeed){
         int start_x = (*point_list)->x;
         int start_y = (*point_list)->y;
-        forward = true;
+        is_forward = true;
         cur_cnt = 2;
         struct Node *start_neighbours = NULL;
         if(get_neighbours_list(bitmapInfo, &start_neighbours, start_x, start_y) >= 2)
@@ -156,7 +156,7 @@ int reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node **point_list, 
             }
             //jesli nie mozesz jeszcze skonczyc
             bool found = false;
-            if(forward){
+            if(is_forward){
                 //wszystkie wolne piksele sasiady oznaczam na bitmapie przez cur_len
                 //wrzucam pierwszego wolnego piksela sasiada do pts_queue
                 for(int i=-1; i<2; i++){
@@ -174,7 +174,7 @@ int reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node **point_list, 
                 }
                 //jesli nie znalazlem zadnego wolnego piksela
                 if(!found){
-                    forward = false;
+                    is_forward = false;
                     delete_start(&pts_queue);
                     prev_x = cur_x;
                     prev_y = cur_y;
@@ -210,7 +210,7 @@ int reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node **point_list, 
                     cur_cnt--;
                 }
                 else{
-                    forward = true;
+                    is_forward = true;
                     cur_cnt++;
                 }
             }
@@ -229,13 +229,36 @@ int reduce_contour_pts(struct BitmapInfo *bitmapInfo, struct Node **point_list, 
         n = n->next;
     }
     free_list(*point_list);
+
+    //nalezy sprawdzic czy punkty na pts_queue sa zgodnie z ruchem wskazowek
+    int v1 = cur_cnt/3;
+    int v2 = cur_cnt/3*2;
+    int x0 = pts_queue->x;
+    int y0 = pts_queue->y;
+    int x1, y1, x2, y2;
+
+    int counter = 0;
     n = pts_queue;
     while(n != NULL){
         int x = n->x;
         int y = n->y;
+        if(counter == v1){
+            x1 = x;
+            y1 = y;
+        }
+        else if(counter == v2){
+            x2 = x;
+            y2 = y;
+        }
         set_bitmap(bitmapInfo, x, y, 1);
         n = n->next;
+        counter++;
     }
+
+    int res = (x1-x0)*(y2-y0)-(y1-y0)*(x2-x0);
+    if(res < 0)
+        reverse_list(&pts_queue);
+
     *point_list = pts_queue;
     return cur_cnt;
 }

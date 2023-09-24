@@ -189,11 +189,20 @@ void describe_side_contour(struct Puzzle *puzzle, struct CornerCandidate **corne
     }
 }
 
+void swap_left_right_end(struct CornerCandidate *corner){
+    int temp_left_x = corner->end_left_x;
+    int temp_left_y = corner->end_left_y;
+    corner->end_left_x = corner->end_right_x;
+    corner->end_left_y = corner->end_right_y;
+    corner->end_right_x = temp_left_x;
+    corner->end_right_y = temp_left_y;
+}
+
 void describe_sides(struct Puzzle *puzzle, struct CornerCandidate **corners, int contour_len, int *points_x, int *points_y){
     for(int i=0; i<4; i++){
         struct CornerCandidate *c1 = corners[i];
         struct CornerCandidate *c2 = corners[(i+1)%4];
-
+        //printf("%d %d %d %d\n", c1->x, c1->y, c2->x, c2->y);
         puzzle->sides[i].width = point_dist(c1->x, c1->y, c2->x, c2->y);
         puzzle->sides[i].angle_left = 1;
         puzzle->sides[i].angle_right = 2;
@@ -234,16 +243,17 @@ void visualize_rotated_sides(struct BitmapInfo *bitmapInfo, struct Puzzle puzzle
         */
 
         int height = s.heighest-s.lowest+1;
-        //printf("%d\n", (int)height);
+        //printf("%d %d\n", n, height);
         int color = s.type + 5;
         for(int j=0; j<n; j++){
             int x = s.positions[j].x;
             int y = s.positions[j].y;
-            //printf("%d %d\n", x, y);
             set_bitmap(bitmapInfo, margin_x + x, cur_height + height + margin_y - y, color);
         }
-        set_bitmap(bitmapInfo, margin_x + s.positions[s.left_shape_ind].x, cur_height + height + margin_y - s.positions[s.left_shape_ind].y, 2);
-        set_bitmap(bitmapInfo, margin_x + s.positions[s.right_shape_ind].x, cur_height + height + margin_y - s.positions[s.right_shape_ind].y, 2);
+        if(s.type != 0){
+            set_bitmap(bitmapInfo, margin_x + s.positions[s.left_shape_ind].x, cur_height + height + margin_y - s.positions[s.left_shape_ind].y, 2);
+            set_bitmap(bitmapInfo, margin_x + s.positions[s.right_shape_ind].x, cur_height + height + margin_y - s.positions[s.right_shape_ind].y, 2);
+        }
         cur_height += (height+margin_y);
     }
 }

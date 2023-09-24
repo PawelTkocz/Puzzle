@@ -1,15 +1,15 @@
 struct PuzzleSide{
-    int type;
+    int type; //
     //-1 wklesly 0 bok 1 wypukly
-    double width;
-    int points_num;
+    int width; //
+    int points_num; //
     struct Position* positions;
-    double angle_left;
-    double angle_right;
-    int heighest;
-    int lowest;
-    int left_shape_ind;
-    int right_shape_ind;
+    double angle_left; //na razie nie uwzgledniam
+    double angle_right; // na razie nie uwzgledniam
+    int heighest; //
+    int lowest; //
+    int left_shape_ind; //
+    int right_shape_ind; //
 };
 
 struct Position{

@@ -1,47 +1,87 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-bool get_width_points(double width1, double width2, double *res){
-    double longer = width1;
-    double shorter = width2;
+//opisac krawedzie zgodnie z ruchem wskazowek zegara a nie raz w jedna raz w druga
+
+bool get_width_points(int width1, int width2, double *res){
+    int longer = width1;
+    int shorter = width2;
     if(width2 > width1){
         longer = width2;
         shorter = width1;
     }
 
     double margin = 0.2*longer;
-    double diff = longer-shorter;
+    int diff = longer-shorter;
 
     if(diff > margin)
         return true;
 
     double alfa = 50.0;
-    return alfa*diff/margin;
+    *res = alfa*diff/margin;
+    return false;
 }
 
-bool get_shape_points(struct PuzzleSide s1, struct PuzzleSide s2){
-    //gdzie z lewej strony zacczyna sie shape gdzie z prawej
-    //i na jakiej wysokosci shape jest najszersze
-    //przydaloby sie tez xy gdzie zaczyna sie ksztalt
-    return 1;
+bool get_shape_points(struct PuzzleSide s1, struct PuzzleSide s2, double *res){
+    struct Position *positions1 = s1.positions;
+    struct Position *positions2 = s2.positions;
+    int left_shape_x1 = positions1[s1.left_shape_ind].x;
+    int left_shape_x2 = positions2[s2.left_shape_ind].x;
+    int right_shape_x1 = positions1[s1.right_shape_ind].x;
+    int right_shape_x2 = positions2[s2.right_shape_ind].x;
+
+    int diff_left = abs(left_shape_x1-left_shape_x2);
+    int diff_right = abs(right_shape_x1-right_shape_x2);
+
+    int longer = s1.width;
+    if(s1.width < s2.width)
+        longer = s2.width;
+
+    double margin = 0.2*longer;
+
+    if(diff_left > margin && diff_right > margin)
+        return true;
+
+    double alfa = 50.0;
+    *res = alfa*(diff_left+diff_right)/margin;
+    return false;
 }
 
-bool get_height_points(struct PuzzleSide s1, struct PuzzleSide s2){
-    //wysokosc nad i pod krawedzia
-    return 1;
+double get_height_points(struct PuzzleSide s1, struct PuzzleSide s2){
+    int height1 = s1.heighest - s1.lowest + 1;
+    int height2 = s2.heighest - s2.lowest + 1;
+
+    int higher = height1;
+    if(height2 > height1){
+        higher = height2;
+    }
+
+    int diff = abs(height1-height2);
+    double alfa = 50.0;
+    int margin = 0.2*higher;
+    if(diff > margin)
+        return alfa;
+    else
+        return alfa*diff/margin;
 }
 
 double puzzle_match_val(struct PuzzleSide s1, struct PuzzleSide s2){
-    //nakladamy najpierw bok 1 na bok 2 i liczymy pole puzzla 2 ktore nie zostanie przykryte
-    //nastepnie to samo tylko nakladamy bok 2 na bok 2
-    //suma tych wartosci bedzie wyznaczala jak bardzo boki do siebie pasuja - im mniej tym lepiej
-    //wartosci kolejnych pikseli podane s¹ jako double
-    //aby nie tracic dokladnosci mozna przelozyc je na bitmape ale np 10x dokladniejsza
-    //w ten sposob zamiast +/- 1piksel skonczymy na +/- 0.1piksela dokladnosci po obrocie
+    if(s1.type == 0 || s2.type == 0)
+        return 100000;
+    if(s1.type + s2.type != 0)
+        return 100000;
+
     double width_points;
     bool no_match = get_width_points(s1.width, s2.width, &width_points);
     if(no_match)
-        return 0;
+        return 100000;
 
-    return 0;
+    double shape_points;
+    no_match = get_shape_points(s1, s2, &shape_points);
+    if(no_match)
+        return 100000;
+
+    double height_points = get_height_points(s1, s2);
+
+    return width_points + shape_points + height_points;
 }

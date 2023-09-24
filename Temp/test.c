@@ -49,7 +49,6 @@ void do_puzzle(struct Puzzle *puzzles, int i){
         contour_len = reduce_contour_pts(&bitmapInfo, &point_list, contour_len);
 
         find_corners(&bitmapInfo, point_list, contour_len, &puzzles[i]);
-
         visualize_rotated_sides(&bitmapInfo, puzzles[i]);
         visualize_corners(&bitmapInfo);
         visualize_sides(&bitmapInfo);
@@ -83,8 +82,8 @@ int main(){
 
     struct Puzzle puzzles[puzzle_pieces];
 
-    /*
-    int nthreads = 8;
+
+    int nthreads = 4;
     pthread_t tid[nthreads];
     for(int i=0; i<nthreads; i++){
         struct ThreadStruct *thread_struct = (struct ThreadStruct*)malloc(sizeof(struct ThreadStruct));
@@ -95,21 +94,22 @@ int main(){
         if(pthread_create(&tid[i], NULL, start_thread, thread_struct) != 0)
             printf("Nie udalo sie stworzyc watku\n");
     }
-    printf("half\n");
     for(int i=0; i<nthreads; i++)
         if(pthread_join(tid[i], NULL) != 0)
             printf("Nie udalo sie zjoinowac watku\n");
-    */
+
+    /*
     for(int i=0; i<puzzle_pieces; i++){
         do_puzzle(puzzles, i);
     }
+    */
 
     printf("done\n");
     int obwod = 0;
     int rogow = 0;
-    bool boarder[puzzle_pieces];
+    bool border[puzzle_pieces];
     for(int i=0; i<puzzle_pieces; i++)
-        boarder[i] = false;
+        border[i] = false;
     int corners[4];
 
     for(int i=0; i<puzzle_pieces; i++){
@@ -117,7 +117,7 @@ int main(){
         int cnt = 0;
         for(int j=0; j<4; j++){
             if(puzzles[i].sides[j].type == 0){
-                boarder[i] = true;
+                border[i] = true;
                 obwod++;
                 cnt++;
                 if(cnt == 2){
@@ -131,11 +131,6 @@ int main(){
         printf("Nie udalo sie wykryc czterech rogow puzzli\n");
         return 0;
     }
-    if(corners[0] < 0)
-        return 0;
-    int cnt = 0;
-    if(boarder[0])
-        cnt++;
     /*
     Aby obliczyc rozmiar puzzli nalezy roziwazac uklad rownan:
     xy = puzzle_pieces
@@ -144,7 +139,7 @@ int main(){
     (obwod/2 - y)y = puzzle_pieces     =>           (-y)^2 + y(obwod/2) - puzzle_pieces = 0
     delta = obwod^2/4 -4*puzzle_pieces
     */
-    /*
+
     double delta = (double)obwod*obwod/4 - 4*puzzle_pieces;
     double sqrt_delta = sqrt(delta);
     double y = (-1*obwod/2 - sqrt_delta)/(-2);
@@ -166,6 +161,6 @@ int main(){
         for(int j=0; j<puzzle_width; j++)
             puzzle_solution[i][j] = -1;
 
-    solve_boarder((int*)puzzle_solution, puzzle_width, puzzle_height, boarder, corners, puzzles);
-    */
+    solve_border((int*)puzzle_solution, puzzle_width, puzzle_height, border, corners, puzzles);
+
 }
