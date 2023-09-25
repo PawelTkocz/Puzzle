@@ -49,9 +49,9 @@ void do_puzzle(struct Puzzle *puzzles, int i){
         contour_len = reduce_contour_pts(&bitmapInfo, &point_list, contour_len);
 
         find_corners(&bitmapInfo, point_list, contour_len, &puzzles[i]);
-        visualize_rotated_sides(&bitmapInfo, puzzles[i]);
-        visualize_corners(&bitmapInfo);
-        visualize_sides(&bitmapInfo);
+        //visualize_rotated_sides(&bitmapInfo, puzzles[i]);
+        //visualize_corners(&bitmapInfo);
+        //visualize_sides(&bitmapInfo);
         bitmap_to_file(&bitmapInfo, foutptr);
         fclose(finptr);
         fclose(foutptr);
@@ -104,6 +104,24 @@ int main(){
     }
     */
 
+    /*
+        char fout_name[PATH_MAX];
+        fill_outfile_name(fout_name, 1111);
+        FILE *foutptr;
+        foutptr = fopen(fout_name, "w");
+
+        for(int i=0; i<puzzle_pieces; i++){
+            for(int j=0; j<4; j++){
+                fprintf(foutptr, "%d\n%d\n%d\n", puzzles[i].sides[j].type, puzzles[i].sides[j].width, puzzles[i].sides[j].points_num);
+                for(int k=0; k<puzzles[i].sides[j].points_num; k++)
+                    fprintf(foutptr, "%d %d\n", puzzles[i].sides[j].positions[k].x, puzzles[i].sides[j].positions[k].y);
+                fprintf(foutptr, "%d\n%d\n%d\n%d\n", puzzles[i].sides[j].heighest, puzzles[i].sides[j].lowest, puzzles[i].sides[j].left_shape_ind, puzzles[i].sides[j].right_shape_ind);
+            }
+        }
+
+        fclose(foutptr);
+    */
+
     printf("done\n");
     int obwod = 0;
     int rogow = 0;
@@ -113,7 +131,6 @@ int main(){
     int corners[4];
 
     for(int i=0; i<puzzle_pieces; i++){
-        printf("%d\n", i);
         int cnt = 0;
         for(int j=0; j<4; j++){
             if(puzzles[i].sides[j].type == 0){
