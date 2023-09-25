@@ -34,9 +34,9 @@ void bitmap_to_file(struct BitmapInfo *bitmapInfo, FILE* foutptr){
             if(v == 1)
                 fprintf(foutptr, "%d %d %d\n", 0, 0, 0);
             else if(v == 2)
-                fprintf(foutptr, "%d %d %d\n", 255, 255, 0);
-            else if(v == 3)
                 fprintf(foutptr, "%d %d %d\n", 255, 0, 255);
+            else if(v == 3)
+                fprintf(foutptr, "%d %d %d\n", 255, 255, 0);
             else if(v == 4 || v==7)
                 fprintf(foutptr, "%d %d %d\n", 255, 0, 0);
             else if(v == 5 || v==8)

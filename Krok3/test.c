@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include "structs.h"
 #include "pomoc.h"
 #include "linked_list.h"
-#include "puzzle_placement.h"
 #include "bitmap.h"
 #include "contour.h"
+#include "describe_side.h"
 #include "corners.h"
-#include "puzzle_match"
+#include "puzzle_match.h"
 #include "solve_boarder.h"
 
 //jak jest opis puzzla to trzeba opisywac jego boki w ustalonej kolejnosci
@@ -48,9 +49,8 @@ void do_puzzle(struct Puzzle *puzzles, int i){
         contour_len = reduce_contour_pts(&bitmapInfo, &point_list, contour_len);
 
         find_corners(&bitmapInfo, point_list, contour_len, &puzzles[i]);
-
-        //visualize_corners(&bitmapInfo);
         //visualize_rotated_sides(&bitmapInfo, puzzles[i]);
+        //visualize_corners(&bitmapInfo);
         //visualize_sides(&bitmapInfo);
         bitmap_to_file(&bitmapInfo, foutptr);
         fclose(finptr);
@@ -72,12 +72,16 @@ void* start_thread(void *arg){
     return NULL;
 }
 
+//watki raz dzialaja raz nie nie wiadomo dlaczego czasem jest error
+//mozna dorobic mozliwosc z watkami lub bez watkow
+
 int main(){
     int puzzle_pieces;
     printf("Podaj liczbe puzzli: ");
     scanf("%d", &puzzle_pieces);
 
     struct Puzzle puzzles[puzzle_pieces];
+
 
     int nthreads = 4;
     pthread_t tid[nthreads];
@@ -88,27 +92,49 @@ int main(){
         thread_struct->puzzle_pieces = puzzle_pieces;
         thread_struct->nthreads = nthreads;
         if(pthread_create(&tid[i], NULL, start_thread, thread_struct) != 0)
-            perror("Nie udalo sie stworzyc watku\n");
+            printf("Nie udalo sie stworzyc watku\n");
     }
-
     for(int i=0; i<nthreads; i++)
         if(pthread_join(tid[i], NULL) != 0)
-            perror("Nie udalo sie zjoinowac watku\n");
+            printf("Nie udalo sie zjoinowac watku\n");
 
+    /*
+    for(int i=0; i<puzzle_pieces; i++){
+        do_puzzle(puzzles, i);
+    }
+    */
 
+    /*
+        char fout_name[PATH_MAX];
+        fill_outfile_name(fout_name, 1111);
+        FILE *foutptr;
+        foutptr = fopen(fout_name, "w");
+
+        for(int i=0; i<puzzle_pieces; i++){
+            for(int j=0; j<4; j++){
+                fprintf(foutptr, "%d\n%d\n%d\n", puzzles[i].sides[j].type, puzzles[i].sides[j].width, puzzles[i].sides[j].points_num);
+                for(int k=0; k<puzzles[i].sides[j].points_num; k++)
+                    fprintf(foutptr, "%d %d\n", puzzles[i].sides[j].positions[k].x, puzzles[i].sides[j].positions[k].y);
+                fprintf(foutptr, "%d\n%d\n%d\n%d\n", puzzles[i].sides[j].heighest, puzzles[i].sides[j].lowest, puzzles[i].sides[j].left_shape_ind, puzzles[i].sides[j].right_shape_ind);
+            }
+        }
+
+        fclose(foutptr);
+    */
+
+    printf("done\n");
     int obwod = 0;
     int rogow = 0;
-    bool boarder[puzzle_pieces];
+    bool border[puzzle_pieces];
     for(int i=0; i<puzzle_pieces; i++)
-        boarder[i] = false;
+        border[i] = false;
     int corners[4];
 
     for(int i=0; i<puzzle_pieces; i++){
-        printf("%d\n", i);
         int cnt = 0;
         for(int j=0; j<4; j++){
             if(puzzles[i].sides[j].type == 0){
-                boarder[i] = true;
+                border[i] = true;
                 obwod++;
                 cnt++;
                 if(cnt == 2){
@@ -122,11 +148,6 @@ int main(){
         printf("Nie udalo sie wykryc czterech rogow puzzli\n");
         return 0;
     }
-    if(corners[0] < 0)
-        return 0;
-    int cnt = 0;
-    if(boarder[0])
-        cnt++;
     /*
     Aby obliczyc rozmiar puzzli nalezy roziwazac uklad rownan:
     xy = puzzle_pieces
@@ -135,6 +156,7 @@ int main(){
     (obwod/2 - y)y = puzzle_pieces     =>           (-y)^2 + y(obwod/2) - puzzle_pieces = 0
     delta = obwod^2/4 -4*puzzle_pieces
     */
+
     double delta = (double)obwod*obwod/4 - 4*puzzle_pieces;
     double sqrt_delta = sqrt(delta);
     double y = (-1*obwod/2 - sqrt_delta)/(-2);
@@ -156,5 +178,6 @@ int main(){
         for(int j=0; j<puzzle_width; j++)
             puzzle_solution[i][j] = -1;
 
-    solve_boarder((int*)puzzle_solution, puzzle_width, puzzle_height, boarder, corners, puzzles);
+    solve_border((int*)puzzle_solution, puzzle_width, puzzle_height, border, corners, puzzles);
+
 }

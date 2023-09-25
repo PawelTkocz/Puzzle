@@ -43,3 +43,19 @@ void delete_next(struct Node *n){
     n->next = temp->next;
     free(temp);
 }
+
+void reverse_list(struct Node **head){
+    if(*head == NULL)
+        return;
+
+    struct Node *prev = NULL;
+    struct Node *next;
+    struct Node *i = *head;
+    while(i != NULL){
+        next = i->next;
+        i->next = prev;
+        prev = i;
+        i = next;
+    }
+    *head = prev;
+}

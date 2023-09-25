@@ -109,6 +109,6 @@ int main(){
             puzzle_solution[i][j] = -1;
 
     solve_border((int*)puzzle_solution, puzzle_width, puzzle_height, border, corners, puzzles);
-
+    return 0;
 }
 
