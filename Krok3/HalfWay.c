@@ -11,6 +11,7 @@
 #include "corners.h"
 #include "puzzle_match.h"
 #include "solve_boarder.h"
+#include "solve_puzzle.h"
 
 int main(){
     int puzzle_pieces;
@@ -103,12 +104,34 @@ int main(){
     int puzzle_width = (int)x;
     int puzzle_height = (int)y;
 
-    int puzzle_solution[puzzle_height][puzzle_width];
+    int puzzle_board[puzzle_height][puzzle_width];
     for(int i=0; i<puzzle_height; i++)
         for(int j=0; j<puzzle_width; j++)
-            puzzle_solution[i][j] = -1;
+            puzzle_board[i][j] = -1;
 
-    solve_border((int*)puzzle_solution, puzzle_width, puzzle_height, border, corners, puzzles);
+    struct BitmapInfo puzzle_solution;
+    puzzle_solution.width = puzzle_width;
+    puzzle_solution.height = puzzle_height;
+    puzzle_solution.bitmap = (int*)puzzle_board;
+
+    int sideUpwardBoard[puzzle_height][puzzle_width];
+    for(int i=0; i<puzzle_height; i++)
+        for(int j=0; j<puzzle_width; j++)
+            sideUpwardBoard[i][j] = -1;
+
+    struct BitmapInfo sideUpward;
+    sideUpward.width = puzzle_width;
+    sideUpward.height = puzzle_height;
+    sideUpward.bitmap = (int*)sideUpwardBoard;
+
+    struct FinalStruct finalStruct;
+    finalStruct.puzzleSolution = &puzzle_solution;
+    finalStruct.sideUpward = &sideUpward;
+    finalStruct.puzzle_pieces = puzzle_pieces;
+    finalStruct.puzzles = puzzles;
+
+    solve_border(finalStruct, border, corners);
+    solve_puzzle(&finalStruct, border);
     return 0;
 }
 

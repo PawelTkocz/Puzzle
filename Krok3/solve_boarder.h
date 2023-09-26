@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+struct FinalStruct{
+    struct BitmapInfo *puzzleSolution;
+    struct BitmapInfo *sideUpward;
+    int puzzle_pieces;
+    struct Puzzle *puzzles;
+};
 
 //tez mozna dodac watki
 
@@ -164,7 +170,12 @@ void print_paths(struct BorderPath *paths, int *borders){
     }
 }
 
-void solve_border(int *puzzle_solution, int puzzle_width, int puzzle_height, bool *is_border, int *corners, struct Puzzle *puzzles){
+void solve_border(struct FinalStruct finalStruct, bool *is_border, int *corners){
+    struct BitmapInfo *puzzle_solution = finalStruct.puzzleSolution;
+    struct BitmapInfo *sideUpward = finalStruct.sideUpward;
+    struct Puzzle *puzzles = finalStruct.puzzles;
+    int puzzle_width = puzzle_solution->width;
+    int puzzle_height = puzzle_solution->height;
 
     int border_pieces = 2*(puzzle_width+puzzle_height)-4;
     int borders[border_pieces];
@@ -258,6 +269,7 @@ void solve_border(int *puzzle_solution, int puzzle_width, int puzzle_height, boo
             exit(0);
         }
     }
+    print_paths(paths, borders);
 
     int solved_border[border_pieces];
     cnt = 0;
@@ -287,58 +299,65 @@ void solve_border(int *puzzle_solution, int puzzle_width, int puzzle_height, boo
         exit(0);
     }
 
-    int puzzle_solution2[puzzle_height][puzzle_width];
     for(int i=0; i<puzzle_height; i++)
         for(int j=0; j<puzzle_width; j++)
-            puzzle_solution2[i][j] = 0;
+            set_bitmap(puzzle_solution, j, i, 0);
 
     if(side_len == puzzle_width){
-        for(int i=0; i<puzzle_width; i++)
-            puzzle_solution2[0][i] = solved_border[first_ind+i];
-        for(int i=1; i<puzzle_height; i++)
-            puzzle_solution2[i][puzzle_width-1] = solved_border[second_ind+i];
+        for(int i=0; i<puzzle_width; i++){
+            set_bitmap(puzzle_solution, i, 0, solved_border[first_ind+i]);
+            set_bitmap(sideUpward, i, 0, (side_right[first_ind+i]+1)%4);
+        }
+        for(int i=1; i<puzzle_height; i++){
+            set_bitmap(puzzle_solution, puzzle_width-1, i, solved_border[second_ind+i]);
+            set_bitmap(sideUpward, puzzle_width-1, i, side_right[second_ind+i]);
+        }
         int third_ind = second_ind+puzzle_height-1;
         if(!is_in(solved_border[third_ind], corners)){
             printf("Blad podczas ukladania ramki\n");
             exit(0);
         }
-        for(int i=1; i<puzzle_width; i++)
-            puzzle_solution2[puzzle_height-1][puzzle_width-1-i] = solved_border[third_ind+i];
+        for(int i=1; i<puzzle_width; i++){
+            set_bitmap(puzzle_solution, puzzle_width-1-i, puzzle_height-1, solved_border[third_ind+i]);
+            set_bitmap(sideUpward, puzzle_width-1-i, puzzle_height-1, (side_left[third_ind+i]+1)%4);
+        }
         int fourth_ind = third_ind+puzzle_width-1;
         if(!is_in(solved_border[fourth_ind], corners)){
             printf("Blad podczas ukladania ramki\n");
             exit(0);
         }
-        for(int i=1; i<puzzle_height-1; i++)
-            puzzle_solution2[puzzle_height-1-i][0] = solved_border[(fourth_ind+i)%border_pieces];
+        for(int i=1; i<puzzle_height-1; i++){
+            set_bitmap(puzzle_solution, 0, puzzle_height-1-i, solved_border[(fourth_ind+i)%border_pieces]);
+            set_bitmap(sideUpward, 0, puzzle_height-1-i, side_left[fourth_ind+i]);
+        }
     }
     else{
-        for(int i=0; i<puzzle_height; i++)
-            puzzle_solution2[i][0] = solved_border[first_ind+i];
-        for(int i=1; i<puzzle_width; i++)
-            puzzle_solution2[puzzle_height-1][i] = solved_border[second_ind+i];
+        for(int i=0; i<puzzle_height; i++){
+            set_bitmap(puzzle_solution, 0, i, solved_border[first_ind+i]);
+            set_bitmap(sideUpward, 0, i, side_left[first_ind+i]);
+        }
+        for(int i=1; i<puzzle_width; i++){
+            set_bitmap(puzzle_solution, i, puzzle_height-1, solved_border[second_ind+i]);
+            set_bitmap(sideUpward, i, puzzle_height-1, (side_right[second_ind+i]+1)%4);
+        }
         int third_ind = second_ind+puzzle_width-1;
         if(!is_in(solved_border[third_ind], corners)){
             printf("Blad podczas ukladania ramki\n");
             exit(0);
         }
-        for(int i=1; i<puzzle_height; i++)
-            puzzle_solution2[puzzle_height-1-i][puzzle_width-1] = solved_border[third_ind+i];
+        for(int i=1; i<puzzle_height; i++){
+            set_bitmap(puzzle_solution, puzzle_width-1, puzzle_height-1-i, solved_border[third_ind+i]);
+            set_bitmap(sideUpward, puzzle_width-1, puzzle_height-1-i, side_right[third_ind+i]);
+        }
         int fourth_ind = third_ind+puzzle_height-1;
         if(!is_in(solved_border[fourth_ind], corners)){
             printf("Blad podczas ukladania ramki\n");
             exit(0);
         }
-        for(int i=1; i<puzzle_width-2; i++)
-            puzzle_solution2[0][puzzle_width-1-i] = solved_border[(fourth_ind+i)%4];
+        for(int i=1; i<puzzle_width-1; i++){
+            set_bitmap(puzzle_solution, puzzle_width-1-i, 0, solved_border[(fourth_ind+i)%border_pieces]);
+            set_bitmap(sideUpward, puzzle_width-1-i, 0, (side_left[fourth_ind+i]+1)%4);
+        }
     }
-
-
-    for(int i=0; i<puzzle_height; i++){
-        for(int j=0; j<puzzle_width; j++)
-            printf("%d", puzzle_solution2[i][j]);
-        printf("\n");
-    }
-
     return;
 }
