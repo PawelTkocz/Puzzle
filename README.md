@@ -18,7 +18,7 @@ za proces przetwarzania skanów puzzli i próbę ułożenia układanki.
 ## Opis działania programu ScanSlicer
 Na wejściu program dostaje nazwę folderu, w którym znajdują się skany puzzli (u mnie jest to folder "Skany"). Następnie program przetwarza każdy z tych
 skanów rozbijając go na mniejsze, w taki sposób że każdy puzzel trafia do osobnego pliku. Ponieważ następne kroki będą opierały się na odczytywaniu
-wartości RGB pikseli, zamast zapisywać pliki w formacie jpg, program zapisuje każdego puzzla w formie bitmapy w następujący sposób:
+wartości RGB pikseli, zamast zapisywać pliki w formacie jpg, program zapisuje każdego puzzla w formie bitmapy w następujący sposób:  
 width height  
 R_0_0 G_0_0 B_0_0  
 R_0_1 G_0_1 B_0_1  
