@@ -15,7 +15,7 @@ Program solve.py korzysta najpierw z pythonowego programu ScanSlicer by pociąć
 w formie bitmapy do folderu Puzzles). Następnie program kompiluje i uruchamia program puzzle_solver (napisany w całości w języku C) odpowiedzialny
 za proces przetwarzania skanów puzzli i próbę ułożenia układanki.
 
-### Opis działania programu ScanSlicer
+## Opis działania programu ScanSlicer
 Na wejściu program dostaje nazwę folderu, w którym znajdują się skany puzzli (u mnie jest to folder "Skany"). Następnie program przetwarza każdy z tych
 skanów rozbijając go na mniejsze, w taki sposób że każdy puzzel trafia do osobnego pliku. Ponieważ następne kroki będą opierały się na odczytywaniu
 wartości RGB pikseli, zamast zapisywać pliki w formacie jpg, program zapisuje każdego puzzla w formie bitmapy w następujący sposób:
@@ -29,7 +29,7 @@ R_(height-1)_(width-1) G_(height-1)_(width-1) B_(height-1)_(width-1)
 Gdzie R_y_x to wartość Red piksela znajdującego się w rzędzie y i kolumnie x. Analogicznie dla wartości G Green i B Blue. Wynikiem działania programu jest
 utworzenie nowego folderu Puzzles i zapisanie w nim 1008 plików opisujących bimapę każdego puzzla w sposób przedstawiony wyżej.
 
-### Opis działania programu puzzle_solver
+## Opis działania programu puzzle_solver
 1. Przetwarzanie skanu każdego puzzla
 Dla każdego pliku opisującego bitmapę puzzla w folderze Puzzles program najpierw wykryje krawędzie puzzla, następnie zlokalizuje jego cztery rogi, a na koniec
 zapamięta puzzla jako 4 krawędzie (każda krawędź jest zapisana jako ciąg współrzędnych (x, y) oraz typ - krawędź może być wypukła, wklęsłą lub płaska, czyli tworzyć ramkę).
