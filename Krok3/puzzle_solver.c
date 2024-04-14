@@ -71,10 +71,14 @@ void* start_thread(void *arg){
     return NULL;
 }
 
-int main(){
+int main(int argc, char **argv){
+    if(argc != 2){
+        printf("Program przyjmuje jeden argument - liczbę puzzli");
+        return 0;
+    }
+
     int puzzle_pieces;
-    printf("Podaj liczbe puzzli: ");
-    scanf("%d", &puzzle_pieces);
+    sscanf(argv[1], "%d", &puzzle_pieces);
     printf("Przetwarzanie puzzli:\n");
 
     struct Puzzle puzzles[puzzle_pieces];
@@ -103,7 +107,7 @@ int main(){
     }
     */
 
-    printf("Ukończono prztwarzanie puzzli\n");
+    printf("Ukończono przetwarzanie puzzli\n");
     int obwod = 0;
     int rogow = 0;
     bool border[puzzle_pieces];

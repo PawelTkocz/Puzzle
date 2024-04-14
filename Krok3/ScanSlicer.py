@@ -1,4 +1,5 @@
 from PIL import Image
+from subprocess import call
 import os
 import threading
 
@@ -39,28 +40,36 @@ def start_thread(v):
     for i in range(v, n, nthreads):
         scan_to_pieces(files[i], i)
 
-puzzle_pieces = int(input('Z ilu elementów składają się Twoje puzzle: '))
-columns = int(input('Ile kolumn puzzli mieści się na jednym skanie: '))
-rows = int(input('A ile wierszy: '))
-dir = input('Podaj nazwę folderu, w którym znajdują się skany puzzli: ')
-res_dir = input('Podaj nazwę folderu, w którym zostaną zapisane wyniki działania programu: ')
+def sliceScans():
+    global puzzle_pieces
+    puzzle_pieces = int(input('Z ilu elementów składają się Twoje puzzle: '))
+    global columns
+    columns = int(input('Ile kolumn puzzli mieści się na jednym skanie: '))
+    global rows
+    rows = int(input('A ile wierszy: '))
+    dir = input('Podaj nazwę folderu, w którym znajdują się skany puzzli: ')
 
-dir_path = os.path.join(os.getcwd(), dir)
-files = [os.path.join(dir_path, f) for f in sorted(os.listdir(dir_path))]
+    dir_path = os.path.join(os.getcwd(), dir)
+    global files
+    files = [os.path.join(dir_path, f) for f in sorted(os.listdir(dir_path))]
 
-res_dir_path = os.path.join(os.getcwd(), res_dir)
-os.mkdir(res_dir_path)
+    global res_dir_path
+    res_dir_path = os.path.join(os.getcwd(), "Puzzles")
+    os.mkdir(res_dir_path)
 
-print("Postęp:")
+    print("Postęp:")
 
-thread_list = []
-for i in range(nthreads):
-    t = threading.Thread(target=start_thread, args=(i, ))
-    thread_list.append(t)
+    thread_list = []
+    for i in range(nthreads):
+        t = threading.Thread(target=start_thread, args=(i, ))
+        thread_list.append(t)
 
-for t in thread_list:
-    t.start()
+    for t in thread_list:
+        t.start()
 
-for t in thread_list:
-    t.join()
-   
+    for t in thread_list:
+        t.join()
+
+    print("Pomyślnie ukończono przetwarzanie skanów\n")
+    return puzzle_pieces
+    

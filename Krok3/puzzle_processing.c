@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 void fill_infile_name(char *fname, int i){
-    strcpy(fname, "Res/p");
+    strcpy(fname, "Puzzles/p");
     char snum[5];
     sprintf(snum, "%d", i);
     strcat(fname, snum);
@@ -18,7 +18,7 @@ void fill_outfile_name(char *fname, int i){
     getcwd(fname, PATH_MAX);
     char a = '\\';
     strncat(fname, &a, 1);
-    strcat(fname, "Nowe_puzzle_res\\p");
+    strcat(fname, "Puzzle_result\\p");
     char snum[5];
     sprintf(snum, "%d", i);
     strcat(fname, snum);
