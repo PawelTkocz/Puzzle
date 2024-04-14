@@ -28,7 +28,6 @@ struct CornerCandidate{
     double angle;
 };
 
-
 struct Puzzle{
     struct PuzzleSide sides[4];
 };
